@@ -30,8 +30,14 @@ export default function PersonalTrackerPage() {
 
   // Save tasks to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-  }, [tasks]);
+  const fetchTasks = async () => {
+    const userId = "demo-user-id"; // Eventually from your Login logic
+    const res = await fetch(`/api/tasks?userId=${userId}`);
+    const data = await res.json();
+    setTasks(data);
+  };
+  fetchTasks();
+}, []);
 
   // Check for upcoming deadlines
   useEffect(() => {
@@ -79,14 +85,20 @@ export default function PersonalTrackerPage() {
     });
   };
 
-  const handleUpdateTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTask) return;
-    setTasks(tasks.map(t => t.id === editingTask ? { ...t, ...formData } : t));
-    setEditingTask(null);
-    setFormData({ title: '', subject: '', dueDate: '', dueTime: '23:59', reminder: true });
-    addNotification('Mission updated! ✨', 'success');
-  };
+  const handleAddTask = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const res = await fetch('/api/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ ...formData, userId: "demo-user-id" }),
+  });
+
+  if (res.ok) {
+    const newTask = await res.json();
+    setTasks([...tasks, newTask]);
+    setShowAddForm(false);
+  }
+};
 
   const handleComplete = (id: string) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, status: 'completed' } : t));
